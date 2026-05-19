@@ -181,7 +181,7 @@ function ClassroomCard({ classroom, deleting, onDelete, delay }: { classroom: Cl
               <p className="text-[11px] text-[#a3a3a3] mt-0.5">{created}</p>
             </div>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} disabled={deleting} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#d4d4d4] hover:text-[#0a0a0a] hover:bg-[#f5f5f5] transition-all shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} disabled={deleting} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#d4d4d4] hover:text-status-red hover:bg-status-red-bg transition-all shrink-0">
             {deleting ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : <Trash2 size={16} strokeWidth={2.25} />}
           </button>
         </div>
@@ -209,15 +209,15 @@ function DeleteDialog({ classroom, onConfirm, onCancel }: { classroom: Classroom
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fadeIn" onClick={onCancel} />
       <div className="relative card w-full max-w-sm p-7 shadow-modal animate-slideUp">
-        <div className="w-11 h-11 bg-[#f5f5f5] border border-[#e5e5e5] rounded-2xl flex items-center justify-center mx-auto mb-5">
-          <Trash2 size={18} strokeWidth={1.75} className="text-[#0a0a0a]" />
+        <div className="w-11 h-11 bg-status-red-bg border border-status-red-border rounded-2xl flex items-center justify-center mx-auto mb-5">
+          <Trash2 size={18} strokeWidth={1.75} className="text-status-red" />
         </div>
         <h3 className="text-base font-semibold text-[#0a0a0a] text-center mb-1">Delete Classroom</h3>
         <p className="text-sm text-[#737373] text-center mb-1.5">Delete <span className="font-semibold text-[#0a0a0a]">&ldquo;{classroom.name}&rdquo;</span>?</p>
         <p className="text-xs text-[#a3a3a3] text-center mb-7">All students, sessions, and signal data will be permanently deleted.</p>
         <div className="flex gap-3">
           <button onClick={onCancel} className="btn-secondary flex-1">Cancel</button>
-          <button onClick={onConfirm} className="btn-primary flex-1">Delete</button>
+          <button onClick={onConfirm} className="btn-danger flex-1">Delete</button>
         </div>
       </div>
     </div>

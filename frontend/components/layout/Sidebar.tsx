@@ -27,7 +27,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
       )}
     >
       {/* Navigation */}
-      <nav className="flex flex-col gap-0.5 p-3 flex-1 overflow-y-auto overflow-x-hidden">
+      <nav className="flex flex-col gap-1.5 p-3 flex-1 overflow-y-auto overflow-x-hidden">
         {NAV.map(({ href, label, icon: Icon }) => {
           const isActive =
             pathname === href ||
@@ -40,7 +40,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
               title={collapsed ? label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 select-none",
-                "text-[#737373] hover:bg-[#f5f5f5] hover:text-[#0a0a0a]",
+                "text-[#525252] hover:bg-[#f5f5f5] hover:text-[#0a0a0a]",
                 isActive && "bg-[#0a0a0a] text-white hover:bg-[#1a1a1a] hover:text-white shadow-sm shadow-black/10",
                 collapsed
                   ? "justify-center h-10 w-10 mx-auto"
@@ -48,11 +48,11 @@ export function Sidebar({ collapsed }: SidebarProps) {
               )}
             >
               <Icon
-                size={15}
-                strokeWidth={1.75}
+                size={18}
+                strokeWidth={2.25}
                 className={cn(
                   "shrink-0",
-                  isActive ? "text-white" : "text-[#a3a3a3] group-hover:text-[#0a0a0a]"
+                  isActive ? "text-white" : "text-[#525252] group-hover:text-[#0a0a0a]"
                 )}
                 style={{ color: isActive ? "#ffffff" : undefined }}
               />

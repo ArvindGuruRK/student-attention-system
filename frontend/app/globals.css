@@ -130,15 +130,15 @@
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 bg-[#0a0a0a] text-white font-semibold px-5 py-2.5 rounded-xl text-sm tracking-tight hover:bg-black transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed select-none;
+    @apply inline-flex items-center justify-center gap-2 bg-status-red text-white font-semibold px-5 py-2.5 rounded-xl text-sm tracking-tight hover:bg-red-700 transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed select-none;
   }
 
   .card {
-    @apply bg-white border border-[#e8e8e8] rounded-2xl;
+    @apply bg-white border border-[#0a0a0a] rounded-2xl;
   }
 
   .card-hover {
-    @apply bg-white border border-[#e8e8e8] rounded-2xl hover:border-[#c8c8c8] hover:shadow-sm transition-all duration-200;
+    @apply bg-white border border-[#0a0a0a] rounded-2xl hover:shadow-sm transition-all duration-200;
   }
 
   .input {

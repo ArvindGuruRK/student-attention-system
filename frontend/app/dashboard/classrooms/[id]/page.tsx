@@ -146,7 +146,7 @@ export default function ClassroomDetailPage() {
                   </div>
                   <span className="text-sm font-medium text-[#0a0a0a]">{s.name}</span>
                 </div>
-                <button onClick={() => removeStudent(s.id)} className="text-[11px] text-[#d4d4d4] hover:text-[#0a0a0a] opacity-0 group-hover:opacity-100 transition-all font-medium">
+                <button onClick={() => removeStudent(s.id)} className="text-[11px] text-[#d4d4d4] hover:text-status-red opacity-0 group-hover:opacity-100 transition-all font-medium">
                   Remove
                 </button>
               </div>
