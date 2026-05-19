@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Semantic status colors — reuse via var() or Tailwind tokens */
+  --status-green:         #16a34a;
+  --status-green-bg:      #f0fdf4;
+  --status-green-border:  #bbf7d0;
+  --status-green-text:    #15803d;
+  --status-green-pulse:   #22c55e;
+
+  --status-yellow:        #d97706;
+  --status-yellow-bg:     #fffbeb;
+  --status-yellow-border: #fde68a;
+  --status-yellow-text:   #b45309;
+  --status-yellow-pulse:  #f59e0b;
+
+  --status-orange:        #ea580c;
+  --status-orange-bg:     #fff7ed;
+  --status-orange-border: #fed7aa;
+  --status-orange-text:   #c2410c;
+  --status-orange-pulse:  #f97316;
+
+  --status-red:           #dc2626;
+  --status-red-bg:        #fef2f2;
+  --status-red-border:    #fecaca;
+  --status-red-text:      #b91c1c;
+  --status-red-pulse:     #ef4444;
+}
+
 @layer base {
   *,
   *::before,
@@ -145,6 +172,18 @@
   .badge-light {
     @apply badge bg-[#f5f5f5] text-[#525252] border border-[#e5e5e5];
   }
+
+  /* Semantic status badges */
+  .badge-status-green  { @apply badge bg-status-green-bg  text-status-green-text  border border-status-green-border; }
+  .badge-status-yellow { @apply badge bg-status-yellow-bg text-status-yellow-text border border-status-yellow-border; }
+  .badge-status-orange { @apply badge bg-status-orange-bg text-status-orange-text border border-status-orange-border; }
+  .badge-status-red    { @apply badge bg-status-red-bg    text-status-red-text    border border-status-red-border; }
+
+  /* Semantic status cards (used in StudentTile, StatusIndicator) */
+  .status-card-attentive { @apply bg-status-green-bg  border-status-green-border; }
+  .status-card-distracted{ @apply bg-status-yellow-bg border-status-yellow-border; }
+  .status-card-at_risk   { @apply bg-status-orange-bg border-status-orange-border; }
+  .status-card-alert     { @apply bg-status-red-bg    border-status-red-border; }
 
   /* Live pulse dot */
   .live-dot {

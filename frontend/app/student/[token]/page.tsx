@@ -65,14 +65,14 @@ export default function StudentPage() {
 
   const status = scoreToStatus(score);
 
-  const statusConfig: Record<SocketStatus, { text: string; dot: string }> = {
-    connecting: { text: "Connecting to server…", dot: "bg-[#d4d4d4] animate-pulse" },
-    connected:  { text: "Joining session…",       dot: "bg-[#737373] animate-pulse" },
-    joined:     { text: "Session active",          dot: "bg-[#0a0a0a]" },
-    error:      { text: socketError || "Connection error", dot: "bg-[#0a0a0a]" },
+  const statusConfig: Record<SocketStatus, { text: string; dot: string; textColor: string }> = {
+    connecting: { text: "Connecting to server…", dot: "bg-[#d4d4d4] animate-pulse",          textColor: "text-[#a3a3a3]" },
+    connected:  { text: "Joining session…",       dot: "bg-status-yellow-pulse animate-pulse", textColor: "text-status-yellow-text" },
+    joined:     { text: "Session active",          dot: "bg-status-green-pulse",                textColor: "text-status-green-text" },
+    error:      { text: socketError || "Connection error", dot: "bg-status-red-pulse",          textColor: "text-status-red-text" },
   };
 
-  const { text: statusText, dot: dotClass } = statusConfig[socketStatus];
+  const { text: statusText, dot: dotClass, textColor } = statusConfig[socketStatus];
 
   return (
     <div className="min-h-screen bg-[#f7f7f7] flex flex-col items-center justify-center gap-6 p-6">
@@ -86,15 +86,13 @@ export default function StudentPage() {
 
       {/* Connection status pill */}
       <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[#e8e8e8] rounded-full">
-        {socketStatus === "joined" ? (
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0a0a0a] opacity-60" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#0a0a0a]" />
-          </span>
-        ) : (
-          <span className={`inline-flex rounded-full h-1.5 w-1.5 ${dotClass}`} />
-        )}
-        <span className="text-xs font-medium text-[#525252]">{statusText}</span>
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
+          {socketStatus === "joined" && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-green-pulse opacity-60" />
+          )}
+          <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${dotClass}`} />
+        </span>
+        <span className={`text-xs font-medium ${textColor}`}>{statusText}</span>
       </div>
 
       {/* Camera */}

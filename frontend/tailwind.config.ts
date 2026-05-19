@@ -32,11 +32,46 @@ const config: Config = {
           900: "#171717",
           950: "#0a0a0a",
         },
-        // Attention status — monochrome fill system (darkness = distraction level)
+        // Attention status — legacy monochrome tokens (kept for backward compat)
         attentive: "#ffffff",
         distracted: "#f0f0f0",
         at_risk: "#404040",
         alert: "#0a0a0a",
+        // Semantic status color system
+        status: {
+          green: {
+            DEFAULT: "#16a34a",
+            bg: "#f0fdf4",
+            border: "#bbf7d0",
+            muted: "#86efac",
+            text: "#15803d",
+            pulse: "#22c55e",
+          },
+          yellow: {
+            DEFAULT: "#d97706",
+            bg: "#fffbeb",
+            border: "#fde68a",
+            muted: "#fcd34d",
+            text: "#b45309",
+            pulse: "#f59e0b",
+          },
+          orange: {
+            DEFAULT: "#ea580c",
+            bg: "#fff7ed",
+            border: "#fed7aa",
+            muted: "#fdba74",
+            text: "#c2410c",
+            pulse: "#f97316",
+          },
+          red: {
+            DEFAULT: "#dc2626",
+            bg: "#fef2f2",
+            border: "#fecaca",
+            muted: "#fca5a5",
+            text: "#b91c1c",
+            pulse: "#ef4444",
+          },
+        },
       },
       borderRadius: {
         "3xl": "1.5rem",
