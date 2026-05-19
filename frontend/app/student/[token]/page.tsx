@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { Eye, Loader2 } from "lucide-react";
+import { CheckCircle, Eye, Loader2 } from "lucide-react";
 import { CameraFeed } from "@/components/student/CameraFeed";
 import { StatusIndicator } from "@/components/student/StatusIndicator";
 import { useMediaPipe } from "@/hooks/useMediaPipe";
+import { api } from "@/lib/api";
 import { connectStudent } from "@/lib/socket";
 import { scoreToStatus } from "@/lib/utils";
 
-type SocketStatus = "connecting" | "connected" | "joined" | "error";
+type SocketStatus = "connecting" | "connected" | "joined" | "error" | "ended";
 
 export default function StudentPage() {
   const { token } = useParams<{ token: string }>();
@@ -37,30 +38,51 @@ export default function StudentPage() {
       setSocketStatus("error");
       setSocketError(data.message);
     }
+    function onSessionEnded() {
+      setSocketStatus("ended");
+    }
 
     socket.on("connect", onConnect);
     socket.on("connect_error", onConnectError);
     socket.on("joined", onJoined);
     socket.on("error", onError);
+    socket.on("SESSION_ENDED", onSessionEnded);
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("connect_error", onConnectError);
       socket.off("joined", onJoined);
       socket.off("error", onError);
+      socket.off("SESSION_ENDED", onSessionEnded);
     };
   }, [token]);
+
+  // Fallback poll: handles the case where the student missed SESSION_ENDED (tab backgrounded, reconnect, etc.)
+  useEffect(() => {
+    if (!sessionId || socketStatus === "ended") return;
+    const intervalId = setInterval(async () => {
+      try {
+        const session = await api.sessions.getStatus(sessionId);
+        if (session.ended_at) setSocketStatus("ended");
+      } catch {
+        // ignore transient fetch errors — socket event is the primary path
+      }
+    }, 30_000);
+    return () => clearInterval(intervalId);
+  }, [sessionId, socketStatus]);
 
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const onStreamReady = useCallback((v: HTMLVideoElement) => {
     videoElementRef.current = v;
   }, []);
 
+  const sessionEnded = socketStatus === "ended";
   const { score, flags, isRunning, error: cvError } = useMediaPipe(
     videoElementRef as React.RefObject<HTMLVideoElement>,
     sessionId,
     studentId,
     token,
+    sessionEnded,
   );
 
   const status = scoreToStatus(score);
@@ -70,9 +92,24 @@ export default function StudentPage() {
     connected:  { text: "Joining session…",       dot: "bg-status-yellow-pulse animate-pulse", textColor: "text-status-yellow-text" },
     joined:     { text: "Session active",          dot: "bg-status-green-pulse",                textColor: "text-status-green-text" },
     error:      { text: socketError || "Connection error", dot: "bg-status-red-pulse",          textColor: "text-status-red-text" },
+    ended:      { text: "Session ended",                   dot: "bg-status-green-pulse",         textColor: "text-status-green-text" },
   };
 
   const { text: statusText, dot: dotClass, textColor } = statusConfig[socketStatus];
+
+  if (sessionEnded) {
+    return (
+      <div className="min-h-screen bg-status-green-bg flex flex-col items-center justify-center gap-4 p-6">
+        <div className="w-full max-w-sm bg-white border border-status-green-border rounded-2xl p-8 text-center flex flex-col items-center gap-4">
+          <CheckCircle size={40} className="text-status-green-text" />
+          <p className="text-sm font-semibold text-[#0a0a0a]">Session Ended</p>
+          <p className="text-xs text-[#737373] leading-relaxed">
+            This session has been stopped by your instructor. Thank you for participating.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f7f7] flex flex-col items-center justify-center gap-6 p-6">

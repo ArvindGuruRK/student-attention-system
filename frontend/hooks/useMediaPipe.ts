@@ -51,6 +51,7 @@ export function useMediaPipe(
   sessionId: string,
   studentId: string,
   token: string,
+  sessionEnded = false,
 ): MediaPipeResult {
   const [score, setScore] = useState(100);
   const [flags, setFlags] = useState<string[]>([]);
@@ -61,12 +62,14 @@ export function useMediaPipe(
   const sessionIdRef = useRef(sessionId);
   const studentIdRef = useRef(studentId);
   const tokenRef = useRef(token);
+  const sessionEndedRef = useRef(sessionEnded);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
     studentIdRef.current = studentId;
     tokenRef.current = token;
-  }, [sessionId, studentId, token]);
+    sessionEndedRef.current = sessionEnded;
+  }, [sessionId, studentId, token, sessionEnded]);
 
   // Initialize MediaPipe exactly once on mount
   useEffect(() => {
@@ -149,7 +152,7 @@ export function useMediaPipe(
 
           const sid = sessionIdRef.current;
           const uid = studentIdRef.current;
-          if (sid && uid) {
+          if (sid && uid && !sessionEndedRef.current) {
             console.log(`[MP] signal → score=${newScore} flags=[${newFlags}] yaw=${newYaw} pitch=${newPitch}`);
             getSocket().emit("signal", {
               session_id: sid,

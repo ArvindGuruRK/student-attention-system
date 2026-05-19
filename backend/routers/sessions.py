@@ -19,6 +19,7 @@ from backend.schemas.student import StudentJoinRequest, StudentJoinResponse
 from backend.services.auth_service import get_current_teacher, oauth2_scheme
 from backend.services.redis_service import unregister_active_session
 from backend.services.report_service import generate_session_report
+from backend.socket_server import sio
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
@@ -103,6 +104,11 @@ async def end_session(
 
     redis = await get_redis()
     await unregister_active_session(redis, str(session_id))
+    await sio.emit(
+        "SESSION_ENDED",
+        {"session_id": str(session_id)},
+        room=f"session:{session_id}",
+    )
     return SessionOut(id=session.id, classroom_id=session.classroom_id, started_at=session.started_at, ended_at=session.ended_at)
 
 
