@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: attention_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: attention_monitor
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - attention-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: attention_redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - attention-net
+
+  cv-engine:
+    build:
+      context: .
+      dockerfile: cv_engine/Dockerfile
+    container_name: attention_cv_engine
+    env_file:
+      - .env
+    environment:
+      BACKEND_URL: http://backend:8000
+    volumes:
+      - .:/app
+      - ./models:/models
+    networks:
+      - attention-net
+    profiles:
+      - cv
+
+volumes:
+  postgres_data:
+
+networks:
+  attention-net:
+    driver: bridge

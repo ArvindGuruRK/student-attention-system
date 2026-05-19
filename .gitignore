@@ -1,0 +1,93 @@
+# ── Secrets & Environment ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+venv/
+.venv/
+env/
+.Python
+
+# Test & coverage artifacts
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Type checker
+.mypy_cache/
+.dmypy.json
+.pyright/
+
+# ── Node / Next.js ────────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+*.tsbuildinfo
+
+# ── ML models (large binary files — download separately) ──────────────────────
+models/*.tflite
+models/*.task
+models/*.onnx
+models/*.pt
+models/*.bin
+models/*.pb
+models/*.h5
+models/*.keras
+cv_engine/models/
+
+# ── Docker / local data volumes ───────────────────────────────────────────────
+data/
+postgres_data/
+redis_data/
+
+# ── Local databases ───────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# ── IDE & AI tooling ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# ── Temp / misc ───────────────────────────────────────────────────────────────
+*.tmp
+*.bak
+*.orig
+tmp/
+temp/

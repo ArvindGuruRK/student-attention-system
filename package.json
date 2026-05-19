@@ -1,0 +1,13 @@
+{
+  "name": "student-attention-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --names \"api,web\" -c \"bgBlue.bold,bgGreen.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "backend\\venv\\Scripts\\python scripts\\preflight.py && backend\\venv\\Scripts\\uvicorn backend.main:app --reload --reload-dir backend --host 0.0.0.0 --port 8000",
+    "dev:frontend": "npm run dev --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

@@ -1,0 +1,12 @@
+# Normalize line endings to LF on commit, check out as-is on Windows
+* text=auto eol=lf
+
+# Force binary files to never be modified
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.tflite binary
+*.task binary
+*.wasm binary
