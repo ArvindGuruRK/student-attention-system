@@ -134,11 +134,11 @@
   }
 
   .card {
-    @apply bg-white border border-[#0a0a0a] rounded-2xl;
+    @apply bg-white border-2 border-[#0a0a0a] rounded-2xl;
   }
 
   .card-hover {
-    @apply bg-white border border-[#0a0a0a] rounded-2xl hover:shadow-sm transition-all duration-200;
+    @apply bg-white border-2 border-[#0a0a0a] rounded-2xl hover:shadow-sm transition-all duration-200;
   }
 
   .input {

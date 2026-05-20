@@ -145,8 +145,8 @@ export default function DashboardPage() {
 }
 
 function SummaryCard({ label, value, sub, href, live = false }: { label: string; value: number; sub: string; href?: string; live?: boolean }) {
-  const inner = (
-    <div className="card p-5">
+  const content = (
+    <>
       <p className="section-title mb-3">{label}</p>
       <div className="flex items-end gap-2">
         <span className="text-4xl font-semibold text-[#0a0a0a] tracking-tight leading-none tabular-nums">{value}</span>
@@ -158,8 +158,8 @@ function SummaryCard({ label, value, sub, href, live = false }: { label: string;
         )}
       </div>
       <p className="text-xs text-[#a3a3a3] mt-1.5">{sub}</p>
-    </div>
+    </>
   );
-  if (href) return <Link href={href} className="card-hover p-0 block">{inner}</Link>;
-  return inner;
+  if (href) return <Link href={href} className="card-hover p-5 block">{content}</Link>;
+  return <div className="card p-5">{content}</div>;
 }

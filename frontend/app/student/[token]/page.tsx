@@ -139,12 +139,12 @@ export default function StudentPage() {
       {isRunning ? (
         <StatusIndicator score={score} flags={flags} status={status} />
       ) : cvError ? (
-        <div className="w-full max-w-sm bg-white border border-[#e8e8e8] rounded-2xl p-5 text-center">
+        <div className="card w-full max-w-sm p-5 text-center">
           <p className="text-xs font-semibold text-[#0a0a0a] mb-1">Face Detection Error</p>
           <p className="text-[11px] text-[#737373]">{cvError}</p>
         </div>
       ) : (
-        <div className="w-full max-w-sm bg-white border border-[#e8e8e8] rounded-2xl p-5 text-center">
+        <div className="card w-full max-w-sm p-5 text-center">
           <div className="flex items-center justify-center gap-2">
             <Loader2 size={16} className="animate-spin text-[#a3a3a3]" />
             <p className="text-xs text-[#a3a3a3]">Initializing face detection…</p>
