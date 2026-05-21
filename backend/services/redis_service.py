@@ -22,6 +22,7 @@ async def push_signal_to_buffer(
     pipe.rpush(key, score)
     pipe.ltrim(key, -BUFFER_MAX, -1)
     pipe.lrange(key, 0, -1)
+    pipe.expire(key, 7200)  # 2-hour TTL prevents memory leak after session ends
     results = await pipe.execute()
     return [int(v) for v in results[2]]
 

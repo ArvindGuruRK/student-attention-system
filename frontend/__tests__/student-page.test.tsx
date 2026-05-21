@@ -6,9 +6,12 @@
  *  2. Poll fallback: api.sessions.getStatus returns ended_at → renders ended screen
  *  3. Ended screen shows correct message and CheckCircle icon
  *  4. Normal connected state renders camera, not ended screen
+ *
+ * NOTE: All tests that interact with the socket or camera must first click
+ * "Start Monitoring" because socket setup is gated on consentGiven=true.
  */
 
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
@@ -76,6 +79,13 @@ function fireSocketEvent(event: string, ...args: unknown[]) {
   handlers.forEach((h) => h(...args));
 }
 
+/** Click "Start Monitoring" to pass the consent gate before interacting with the socket. */
+async function giveConsent() {
+  await act(async () => {
+    fireEvent.click(screen.getByText("Start Monitoring"));
+  });
+}
+
 // ── Component under test (imported AFTER mocks are set up) ────────────────────
 
 // eslint-disable-next-line import/first
@@ -85,7 +95,6 @@ import StudentPage from "@/app/student/[token]/page";
 
 describe("StudentPage — SESSION_ENDED socket event", () => {
   beforeEach(() => {
-    // Clear captured handlers between tests
     Object.keys(socketHandlers).forEach((k) => delete socketHandlers[k]);
     mockSocket.on.mockClear();
     mockSocket.off.mockClear();
@@ -98,8 +107,8 @@ describe("StudentPage — SESSION_ENDED socket event", () => {
 
   it("renders the ended screen when SESSION_ENDED fires", async () => {
     render(<StudentPage />);
+    await giveConsent();
 
-    // Simulate SESSION_ENDED arriving from the server
     await act(async () => {
       fireSocketEvent("SESSION_ENDED");
     });
@@ -110,18 +119,20 @@ describe("StudentPage — SESSION_ENDED socket event", () => {
     expect(screen.getByText("Session Ended")).toBeInTheDocument();
   });
 
-  it("does not show the ended screen before SESSION_ENDED fires", () => {
+  it("does not show the ended screen before SESSION_ENDED fires", async () => {
     render(<StudentPage />);
+    await giveConsent();
 
     expect(
       screen.queryByText("This session has been stopped by your instructor. Thank you for participating."),
     ).not.toBeInTheDocument();
   });
 
-  it("registers and cleans up SESSION_ENDED listener", () => {
+  it("registers and cleans up SESSION_ENDED listener", async () => {
     const { unmount } = render(<StudentPage />);
+    await giveConsent();
 
-    // on() should have been called with SESSION_ENDED
+    // on() should have been called with SESSION_ENDED after consent
     expect(mockSocket.on).toHaveBeenCalledWith("SESSION_ENDED", expect.any(Function));
 
     unmount();
@@ -135,8 +146,9 @@ describe("StudentPage — SESSION_ENDED socket event", () => {
 
   it("hides the camera feed after session ends", async () => {
     render(<StudentPage />);
+    await giveConsent();
 
-    // Camera is visible while session is active
+    // Camera is visible after consent is given
     expect(screen.getByTestId("camera-feed")).toBeInTheDocument();
 
     await act(async () => {
@@ -168,23 +180,22 @@ describe("StudentPage — poll fallback (missed SESSION_ENDED)", () => {
   });
 
   it("shows ended screen when poll returns ended_at after 30s", async () => {
-    // Simulate student joining so sessionId is set (poll only runs after join)
     mockGetStatus.mockResolvedValue({
       id: "session-123",
       classroom_id: "cls-1",
       classroom_name: "Test Class",
       started_at: "2025-01-01T00:00:00Z",
-      ended_at: "2025-01-01T01:00:00Z", // session ended
+      ended_at: "2025-01-01T01:00:00Z",
     });
 
     render(<StudentPage />);
+    await giveConsent();
 
     // Trigger joined event so sessionId state is populated
     await act(async () => {
       fireSocketEvent("joined", { session_id: "session-123", student_id: "student-456" });
     });
 
-    // Advance 30 seconds — vi.advanceTimersByTimeAsync also flushes async callbacks
     await act(async () => {
       await vi.advanceTimersByTimeAsync(30_000);
     });
@@ -204,6 +215,7 @@ describe("StudentPage — poll fallback (missed SESSION_ENDED)", () => {
     });
 
     render(<StudentPage />);
+    await giveConsent();
 
     await act(async () => {
       fireSocketEvent("joined", { session_id: "session-123", student_id: "student-456" });
@@ -228,6 +240,7 @@ describe("StudentPage — poll fallback (missed SESSION_ENDED)", () => {
     });
 
     render(<StudentPage />);
+    await giveConsent();
 
     await act(async () => {
       fireSocketEvent("joined", { session_id: "session-123", student_id: "student-456" });

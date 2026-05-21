@@ -14,12 +14,17 @@ type SocketStatus = "connecting" | "connected" | "joined" | "error" | "ended";
 
 export default function StudentPage() {
   const { token } = useParams<{ token: string }>();
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [cameraDeclined, setCameraDeclined] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [studentId, setStudentId] = useState("");
   const [socketStatus, setSocketStatus] = useState<SocketStatus>("connecting");
   const [socketError, setSocketError] = useState("");
 
+  // Only connect to the socket after the student has given camera consent
   useEffect(() => {
+    if (!consentGiven) return;
+
     const socket = connectStudent(token);
 
     function onConnect() {
@@ -55,7 +60,7 @@ export default function StudentPage() {
       socket.off("error", onError);
       socket.off("SESSION_ENDED", onSessionEnded);
     };
-  }, [token]);
+  }, [token, consentGiven]);
 
   // Fallback poll: handles the case where the student missed SESSION_ENDED (tab backgrounded, reconnect, etc.)
   useEffect(() => {
@@ -77,12 +82,14 @@ export default function StudentPage() {
   }, []);
 
   const sessionEnded = socketStatus === "ended";
+
+  // Gate MediaPipe: pass true for the stop flag until consent is given or session ends
   const { score, flags, isRunning, error: cvError } = useMediaPipe(
     videoElementRef as React.RefObject<HTMLVideoElement>,
     sessionId,
     studentId,
     token,
-    sessionEnded,
+    !consentGiven || sessionEnded,
   );
 
   const status = scoreToStatus(score);
@@ -96,6 +103,122 @@ export default function StudentPage() {
   };
 
   const { text: statusText, dot: dotClass, textColor } = statusConfig[socketStatus];
+
+  // Consent gate — shown before any camera or socket activity
+  if (!consentGiven) {
+    return (
+      <div className="min-h-screen bg-[#f7f7f7] flex flex-col items-center justify-center gap-6 p-6">
+        {/* App header */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-[#0a0a0a] rounded-lg flex items-center justify-center">
+            <Eye size={14} strokeWidth={1.75} className="text-white" />
+          </div>
+          <span className="font-bold text-sm tracking-tight text-[#0a0a0a]">Attend — Student View</span>
+        </div>
+
+        {/* Consent card */}
+        <div className="w-full max-w-sm bg-white border-2 border-[#e8e8e8] rounded-2xl p-8 flex flex-col items-center gap-6">
+          {/* Shield icon */}
+          <div className="w-14 h-14 bg-[#f0fdf4] rounded-2xl flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#16a34a"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm font-bold text-[#0a0a0a] mb-1">Camera Permission Required</p>
+            <p className="text-xs text-[#737373] leading-relaxed">
+              This session uses your camera to measure attention. Here&rsquo;s exactly what happens:
+            </p>
+          </div>
+
+          {/* What IS collected */}
+          <ul className="w-full space-y-2">
+            <li className="flex items-start gap-2.5">
+              <span className="mt-0.5 shrink-0 w-4 h-4 bg-[#f0fdf4] rounded-full flex items-center justify-center">
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                  <circle cx="4" cy="4" r="3" fill="#16a34a" />
+                </svg>
+              </span>
+              <span className="text-xs text-[#404040] leading-relaxed">
+                <strong className="font-semibold text-[#0a0a0a]">Head pose</strong> — yaw and pitch angles are estimated locally
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="mt-0.5 shrink-0 w-4 h-4 bg-[#f0fdf4] rounded-full flex items-center justify-center">
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                  <circle cx="4" cy="4" r="3" fill="#16a34a" />
+                </svg>
+              </span>
+              <span className="text-xs text-[#404040] leading-relaxed">
+                <strong className="font-semibold text-[#0a0a0a]">Attention score</strong> — a 0–100 number sent to your teacher
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="mt-0.5 shrink-0 w-4 h-4 bg-[#f0fdf4] rounded-full flex items-center justify-center">
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                  <circle cx="4" cy="4" r="3" fill="#16a34a" />
+                </svg>
+              </span>
+              <span className="text-xs text-[#404040] leading-relaxed">
+                <strong className="font-semibold text-[#0a0a0a]">Session flags</strong> — e.g. &ldquo;gaze away&rdquo; or &ldquo;head tilt&rdquo;
+              </span>
+            </li>
+          </ul>
+
+          {/* What is NOT collected */}
+          <div className="w-full bg-[#f5f5f5] rounded-xl p-4">
+            <p className="text-[11px] font-semibold text-[#737373] uppercase tracking-wider mb-2">Not collected</p>
+            <ul className="space-y-1.5">
+              <li className="flex items-center gap-2">
+                <span className="text-[#a3a3a3] text-xs leading-none">✕</span>
+                <span className="text-xs text-[#737373]">No video ever leaves your device</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-[#a3a3a3] text-xs leading-none">✕</span>
+                <span className="text-xs text-[#737373]">No recordings or screenshots are taken</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Primary CTA */}
+          <button
+            type="button"
+            onClick={() => setConsentGiven(true)}
+            className="w-full py-2.5 px-4 bg-[#16a34a] hover:bg-[#15803d] active:bg-[#166534] text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            Start Monitoring
+          </button>
+
+          {/* Decline path */}
+          {cameraDeclined ? (
+            <p className="text-xs text-[#737373] text-center leading-relaxed">
+              Please notify your teacher so they can mark you as present manually.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCameraDeclined(true)}
+              className="text-[11px] text-[#a3a3a3] hover:text-[#737373] underline underline-offset-2 transition-colors"
+            >
+              I can&rsquo;t share my camera
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (sessionEnded) {
     return (

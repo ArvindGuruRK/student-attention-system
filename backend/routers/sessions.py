@@ -2,7 +2,7 @@ import secrets
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +18,7 @@ from backend.schemas.session import SessionOut, SessionReport
 from backend.schemas.student import StudentJoinRequest, StudentJoinResponse
 from backend.services.auth_service import get_current_teacher, oauth2_scheme
 from backend.services.redis_service import unregister_active_session
+from backend.services.pdf_service import generate_session_pdf
 from backend.services.report_service import generate_session_report
 from backend.socket_server import sio
 
@@ -33,9 +34,19 @@ async def _teacher(token: str = Depends(oauth2_scheme), db: AsyncSession = Depen
 async def student_join_session(
     session_id: uuid.UUID,
     body: StudentJoinRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> StudentJoinResponse:
     """Public endpoint: student self-registers into an active session by providing name and roll number."""
+    # Rate-limit: max 3 join attempts per IP per session to prevent dashboard flooding
+    redis = await get_redis()
+    rate_key = f"join_rate:{session_id}:{request.client.host}"
+    count = await redis.incr(rate_key)
+    if count == 1:
+        await redis.expire(rate_key, 3600)  # 1-hour window
+    if count > 3:
+        raise HTTPException(status_code=429, detail="Too many registration attempts from this address")
+
     session_result = await db.execute(
         select(ClassSession).where(ClassSession.id == session_id, ClassSession.ended_at.is_(None))
     )
@@ -123,17 +134,32 @@ async def get_report(
     return await generate_session_report(session_id, db)
 
 
+@router.get("/{session_id}/export/pdf")
+async def export_pdf(
+    session_id: uuid.UUID,
+    teacher: Teacher = Depends(_teacher),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    """Stream a PDF report for the session."""
+    await _owned_session(session_id, teacher.id, db)
+    buffer = await generate_session_pdf(session_id, db)
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=session_{session_id}.pdf"},
+    )
+
+
 @router.get("/{session_id}/export/csv")
 async def export_csv(
     session_id: uuid.UUID,
     teacher: Teacher = Depends(_teacher),
     db: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
-    """Stream a CSV of all attention signals for the session."""
+    """Stream a CSV of all attention signals for the session in batches to avoid blocking the event loop."""
     await _owned_session(session_id, teacher.id, db)
-    content = await _build_csv(session_id, db)
     return StreamingResponse(
-        iter([content]),
+        _csv_generator(session_id, db),
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=session_{session_id}.csv"},
     )
@@ -186,17 +212,31 @@ async def _owned_session(session_id: uuid.UUID, teacher_id: uuid.UUID, db: Async
     return session
 
 
-async def _build_csv(session_id: uuid.UUID, db: AsyncSession) -> str:
-    """Assemble a CSV string from all signals for a session."""
+async def _csv_generator(session_id: uuid.UUID, db: AsyncSession):
+    """Async generator: yields one summary row per student (avg, best, lowest, status breakdown, alert count)."""
+    yield "Student Name,Avg Attention (%),Best Score,Lowest Score,% Time Attentive,% Time Distracted,% Time At-Risk,Alerts\n"
+
+    # Aggregate all signals per student in a single pass
     result = await db.execute(
-        select(AttentionSignal, Student.name)
+        select(AttentionSignal.attention_score, Student.name)
         .join(Student, AttentionSignal.student_id == Student.id)
         .where(AttentionSignal.session_id == session_id)
-        .order_by(AttentionSignal.timestamp)
+        .order_by(Student.name)
     )
     rows = result.all()
-    lines = ["student_name,attention_score,flags,yaw,pitch,timestamp"]
-    for sig, name in rows:
-        flags_str = "|".join(sig.flags or [])
-        lines.append(f"{name},{sig.attention_score},{flags_str},{sig.yaw},{sig.pitch},{sig.timestamp.isoformat()}")
-    return "\n".join(lines)
+
+    # Group by student name
+    buckets: dict[str, list[int]] = {}
+    for score, name in rows:
+        buckets.setdefault(name, []).append(score)
+
+    for name, scores in buckets.items():
+        total = len(scores)
+        avg = round(sum(scores) / total)
+        best = max(scores)
+        lowest = min(scores)
+        attentive = round(sum(1 for s in scores if s >= 80) / total * 100)
+        distracted = round(sum(1 for s in scores if 60 <= s < 80) / total * 100)
+        at_risk = round(sum(1 for s in scores if s < 60) / total * 100)
+        alerts = sum(1 for s in scores if s < 40)
+        yield f"{name},{avg},{best},{lowest},{attentive}%,{distracted}%,{at_risk}%,{alerts}\n"

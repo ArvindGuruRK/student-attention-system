@@ -6,6 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch, call
 
 import pytest
 
+# Force module import so patch() can resolve backend.routers.sessions.* names
+import backend.routers.sessions
+
 
 def _make_db_mock(session_obj, classroom_obj):
     """Return an AsyncMock DB session whose execute() yields session then classroom."""
@@ -63,7 +66,7 @@ async def test_end_session_emits_session_ended_to_room():
     with (
         patch("backend.routers.sessions.sio") as mock_sio,
         patch("backend.routers.sessions.unregister_active_session", new_callable=AsyncMock) as mock_unregister,
-        patch("backend.routers.sessions.get_redis", return_value=mock_redis),
+        patch("backend.routers.sessions.get_redis", new=AsyncMock(return_value=mock_redis)),
     ):
         mock_sio.emit = AsyncMock()
 
@@ -110,7 +113,7 @@ async def test_end_session_emit_order_after_unregister():
     with (
         patch("backend.routers.sessions.sio") as mock_sio,
         patch("backend.routers.sessions.unregister_active_session", side_effect=fake_unregister),
-        patch("backend.routers.sessions.get_redis", return_value=mock_redis),
+        patch("backend.routers.sessions.get_redis", new=AsyncMock(return_value=mock_redis)),
     ):
         mock_sio.emit = AsyncMock(side_effect=fake_emit)
 
@@ -142,7 +145,7 @@ async def test_end_session_emit_payload_contains_session_id():
     with (
         patch("backend.routers.sessions.sio") as mock_sio,
         patch("backend.routers.sessions.unregister_active_session", new_callable=AsyncMock),
-        patch("backend.routers.sessions.get_redis", return_value=mock_redis),
+        patch("backend.routers.sessions.get_redis", new=AsyncMock(return_value=mock_redis)),
     ):
         mock_sio.emit = AsyncMock()
 
@@ -180,7 +183,7 @@ async def test_end_session_already_ended_raises_400_no_emit():
     with (
         patch("backend.routers.sessions.sio") as mock_sio,
         patch("backend.routers.sessions.unregister_active_session", new_callable=AsyncMock),
-        patch("backend.routers.sessions.get_redis", return_value=mock_redis),
+        patch("backend.routers.sessions.get_redis", new=AsyncMock(return_value=mock_redis)),
     ):
         mock_sio.emit = AsyncMock()
 
@@ -212,7 +215,7 @@ async def test_end_session_returns_session_out_with_ended_at():
     with (
         patch("backend.routers.sessions.sio") as mock_sio,
         patch("backend.routers.sessions.unregister_active_session", new_callable=AsyncMock),
-        patch("backend.routers.sessions.get_redis", return_value=mock_redis),
+        patch("backend.routers.sessions.get_redis", new=AsyncMock(return_value=mock_redis)),
     ):
         mock_sio.emit = AsyncMock()
 

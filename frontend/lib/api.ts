@@ -85,6 +85,7 @@ export const api = {
     list: (classroomId: string) =>
       request<Session[]>(`/api/sessions/classrooms/${classroomId}/sessions`),
     exportCsvUrl: (id: string) => `${BASE}/api/sessions/${id}/export/csv`,
+    exportPdfUrl: (id: string) => `${BASE}/api/sessions/${id}/export/pdf`,
     join: (sessionId: string, name: string, rollNumber: string) =>
       request<StudentJoinResponse>(
         `/api/sessions/${sessionId}/join`,
