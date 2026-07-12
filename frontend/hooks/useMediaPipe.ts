@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getSocket } from "@/lib/socket";
+import { usePhoneDetector } from "./usePhoneDetector";
 
 interface MediaPipeResult {
   score: number;
@@ -58,11 +59,19 @@ export function useMediaPipe(
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { isPhoneDetected } = usePhoneDetector(videoRef);
+  // Ref so onResults always reads the latest phone state without re-initializing MediaPipe
+  const isPhoneDetectedRef = useRef(isPhoneDetected);
+
   // Refs so onResults always reads the latest session params without re-initializing
   const sessionIdRef = useRef(sessionId);
   const studentIdRef = useRef(studentId);
   const tokenRef = useRef(token);
   const sessionEndedRef = useRef(sessionEnded);
+
+  useEffect(() => {
+    isPhoneDetectedRef.current = isPhoneDetected;
+  }, [isPhoneDetected]);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -146,6 +155,8 @@ export function useMediaPipe(
             if (Math.abs(newPitch) > PITCH_THRESHOLD)  { s -= 30; newFlags.push("head_tilt"); }
             newScore = Math.max(0, s);
           }
+
+          if (isPhoneDetectedRef.current) newFlags.push("phone_detected");
 
           setScore(newScore);
           setFlags(newFlags);

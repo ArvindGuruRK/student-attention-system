@@ -1,5 +1,6 @@
 "use client";
 
+import { Smartphone } from "lucide-react";
 import {
   cn,
   statusToTileClasses,
@@ -26,8 +27,9 @@ export function StudentTile({ student }: StudentTileProps) {
   const dotClass     = statusDotClass(status);
   const ringClass    = statusToRingClass(status);
   const label        = statusLabel(status);
-  const isAlert      = status === "alert";
-  const isAtRisk     = status === "at_risk";
+  const isAlert         = status === "alert";
+  const isAtRisk        = status === "at_risk";
+  const isPhoneDetected = student.flags.includes("phone_detected");
 
   return (
     <div
@@ -60,16 +62,21 @@ export function StudentTile({ student }: StudentTileProps) {
           <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotClass)} />
         </span>
 
-        {student.flags.length > 0 && (
-          <span
-            className={cn(
-              "text-[9px] font-semibold px-1.5 py-0.5 rounded-full border",
-              badgeClasses,
-            )}
-          >
-            {student.flags.length} flag{student.flags.length > 1 ? "s" : ""}
-          </span>
-        )}
+        <div className="flex items-center gap-1">
+          {isPhoneDetected && (
+            <Smartphone className="h-3.5 w-3.5 text-red-500 shrink-0" />
+          )}
+          {student.flags.length > 0 && (
+            <span
+              className={cn(
+                "text-[9px] font-semibold px-1.5 py-0.5 rounded-full border",
+                badgeClasses,
+              )}
+            >
+              {student.flags.length} flag{student.flags.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Score — semantic color, dominant element */}

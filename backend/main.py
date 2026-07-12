@@ -24,7 +24,7 @@ async def _snapshot_broadcaster() -> None:
     from sqlalchemy import select
     from backend.models.session import ClassSession
     from backend.models.student import Student
-    from backend.services.redis_service import get_active_session_ids, get_all_student_buffers, get_student_state, unregister_active_session
+    from backend.services.redis_service import get_active_session_ids, get_all_student_buffers, get_all_student_states, unregister_active_session
     from backend.services.attention_service import compute_ema, score_to_status, build_session_snapshot
 
     while True:
@@ -59,23 +59,26 @@ async def _snapshot_broadcaster() -> None:
                     name_map = {str(s.id): s.name for s in all_students}
 
                     buffers = await get_all_student_buffers(redis, session_id_str, student_ids)
+                    states = await get_all_student_states(redis, session_id_str, student_ids)
                     scores: dict[str, float] = {}
                     statuses: dict[str, str] = {}
+                    flags_map: dict[str, list[str]] = {}
 
                     for sid in student_ids:
                         buf = buffers.get(sid, [])
+                        state = states.get(sid)
                         if buf:
                             ema = compute_ema(buf)
-                        else:
-                            # Only include students who have previously sent signals
-                            state = await get_student_state(redis, session_id_str, sid)
-                            if not state:
-                                continue  # Skip: student hasn't joined yet
+                        elif state:
+                            # Buffer expired but state is still warm — use cached EMA
                             ema = state.get("ema_score", 100.0)
+                        else:
+                            continue  # Skip: student hasn't joined yet
                         scores[sid] = ema
                         statuses[sid] = score_to_status(ema, 40, 60)
+                        flags_map[sid] = state.get("flags", []) if state else []
 
-                    snapshot = build_session_snapshot(session_id_str, scores, name_map, statuses)
+                    snapshot = build_session_snapshot(session_id_str, scores, name_map, statuses, flags_map)
                     await sio.emit("SESSION_SNAPSHOT", snapshot, room=f"session:{session_id_str}")
         except Exception:
             pass  # Never crash the broadcaster loop

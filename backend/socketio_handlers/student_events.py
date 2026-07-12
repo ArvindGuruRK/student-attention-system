@@ -10,11 +10,13 @@ from backend.models.signal import AttentionSignal
 from backend.models.student import Student
 from backend.redis_client import get_redis
 from backend.services.attention_service import (
+    apply_phone_penalty,
     build_alert_payload,
     build_status_update_payload,
     compute_ema,
     score_to_status,
     should_fire_alert,
+    should_fire_phone_alert,
 )
 from backend.services.redis_service import (
     get_student_state,
@@ -63,7 +65,7 @@ async def join_session(sid: str, data: dict) -> None:
 
 @sio.event
 async def signal(sid: str, data: dict) -> None:
-    """Process an attention signal: update Redis buffer, recompute EMA, broadcast updates."""
+    """Process an attention signal: apply phone penalty, update Redis buffer, recompute EMA, broadcast updates."""
     session_data = await sio.get_session(sid)
     if not session_data:
         return
@@ -82,8 +84,11 @@ async def signal(sid: str, data: dict) -> None:
     yaw: float | None = data.get("yaw")
     pitch: float | None = data.get("pitch")
 
-    # Update rolling buffer and compute EMA
-    scores = await push_signal_to_buffer(redis, session_id_str, student_id_str, raw_score)
+    # Deduct 30 points for phone usage before it enters the EMA window
+    effective_score = apply_phone_penalty(raw_score, flags)
+
+    # Update rolling buffer and compute EMA on the effective (penalized) score
+    scores = await push_signal_to_buffer(redis, session_id_str, student_id_str, effective_score)
     ema_score = compute_ema(scores)
 
     # Load per-classroom thresholds and persist signal to DB
@@ -102,7 +107,7 @@ async def signal(sid: str, data: dict) -> None:
         db.add(AttentionSignal(
             session_id=uuid.UUID(session_id_str),
             student_id=uuid.UUID(student_id_str),
-            attention_score=raw_score,
+            attention_score=effective_score,  # store penalized score — consistent with what the EMA sees
             flags=flags,
             yaw=yaw,
             pitch=pitch,
@@ -113,13 +118,15 @@ async def signal(sid: str, data: dict) -> None:
     current_status = score_to_status(ema_score, alert_threshold, warn_threshold)
     prev_state = await get_student_state(redis, session_id_str, student_id_str)
     previous_status = prev_state.get("status") if prev_state else None
+    previous_flags: list[str] = prev_state.get("flags", []) if prev_state else []
 
     await set_student_state(redis, session_id_str, student_id_str, {
         "status": current_status,
         "ema_score": ema_score,
+        "flags": flags,  # persisted so next signal can detect phone flag transitions
     })
 
-    # Always broadcast STATUS_UPDATE
+    # Always broadcast STATUS_UPDATE so the teacher tile reflects new score and flags
     await sio.emit(
         "STATUS_UPDATE",
         build_status_update_payload(
@@ -128,11 +135,19 @@ async def signal(sid: str, data: dict) -> None:
         room=room,
     )
 
-    # Fire ALERT only on state transitions (not every signal)
+    # Fire score-based alert only on state transitions (not every signal)
     alert_type = should_fire_alert(current_status, previous_status)
     if alert_type:
         await sio.emit(
             "ALERT",
             build_alert_payload(uuid.UUID(student_id_str), student_name, alert_type, ema_score, flags),
+            room=room,
+        )
+
+    # Fire PHONE_DETECTED on the first signal where the flag appears — independent of score threshold
+    if should_fire_phone_alert(flags, previous_flags):
+        await sio.emit(
+            "ALERT",
+            build_alert_payload(uuid.UUID(student_id_str), student_name, "PHONE_DETECTED", ema_score, flags),
             room=room,
         )

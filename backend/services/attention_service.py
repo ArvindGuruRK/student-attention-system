@@ -46,6 +46,23 @@ def should_fire_alert(
     return None
 
 
+def apply_phone_penalty(raw_score: int, flags: list[str]) -> int:
+    """Subtract 30 from the raw score when phone_detected is flagged, floored at 0. Call before EMA."""
+    if "phone_detected" in flags:
+        return max(0, raw_score - 30)
+    return raw_score
+
+
+def should_fire_phone_alert(
+    flags: list[str],
+    previous_flags: Optional[list[str]],
+) -> bool:
+    """Return True only on the first signal where phone_detected appears (transition, not every signal)."""
+    return "phone_detected" in flags and (
+        previous_flags is None or "phone_detected" not in previous_flags
+    )
+
+
 def build_status_update_payload(
     student_id: uuid.UUID,
     student_name: str,
@@ -93,11 +110,13 @@ def build_session_snapshot(
     student_scores: dict[str, float],
     student_names: dict[str, str],
     student_statuses: dict[str, str],
+    student_flags: Optional[dict[str, list[str]]] = None,
 ) -> dict:
     """Build a SESSION_SNAPSHOT payload broadcast every 5 seconds to the teacher dashboard."""
     scores = list(student_scores.values())
     class_avg = round(sum(scores) / len(scores), 1) if scores else 0.0
     at_risk_count = sum(1 for s in student_statuses.values() if s in ("at_risk", "alert"))
+    _flags = student_flags or {}
 
     return {
         "type": "SESSION_SNAPSHOT",
@@ -110,7 +129,7 @@ def build_session_snapshot(
                 "student_name": student_names.get(sid, "Unknown"),
                 "status": student_statuses.get(sid, "attentive"),
                 "attention_score": round(student_scores.get(sid, 100.0)),
-                "flags": [],
+                "flags": _flags.get(sid, []),
                 "trend": "stable",
             }
             for sid in student_scores

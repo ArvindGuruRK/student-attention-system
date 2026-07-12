@@ -86,3 +86,22 @@ async def get_all_student_buffers(
         pipe.lrange(_SIGNAL_KEY.format(session_id=session_id, student_id=sid), 0, -1)
     results = await pipe.execute()
     return {student_ids[i]: [int(v) for v in results[i]] for i in range(len(student_ids))}
+
+
+async def get_all_student_states(
+    redis: aioredis.Redis,
+    session_id: str,
+    student_ids: list[str],
+) -> dict[str, dict]:
+    """Batch-read persisted alert state for all students in a session using a single pipeline."""
+    if not student_ids:
+        return {}
+    pipe = redis.pipeline()
+    for sid in student_ids:
+        pipe.get(_STATE_KEY.format(session_id=session_id, student_id=sid))
+    results = await pipe.execute()
+    return {
+        student_ids[i]: json.loads(results[i])
+        for i in range(len(student_ids))
+        if results[i] is not None
+    }
