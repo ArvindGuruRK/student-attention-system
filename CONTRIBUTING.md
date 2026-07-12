@@ -18,7 +18,6 @@ Once running, the demo teacher account (`teacher@demo.com` / `demo1234`) is avai
 |----------------------|-----------------------------------------------------|
 | `backend/`           | FastAPI application — routers, services, models     |
 | `frontend/`          | Next.js 15 App Router — pages, components, hooks    |
-| `cv_engine/`         | Python CV process — MediaPipe face + head pose      |
 | `scripts/`           | Dev utilities — seeder, load tester, preflight check|
 | `models/`            | ML model binaries (not committed — see models/README)|
 
@@ -26,14 +25,14 @@ Once running, the demo teacher account (`teacher@demo.com` / `demo1234`) is avai
 
 ## Development Conventions
 
-### Python (backend + cv_engine)
+### Python (backend)
 
 - **Type hints on every function.** No bare `def foo(x):`.
 - **Async by default.** All database calls use `async/await` with SQLAlchemy's async session. No sync DB calls.
 - **Services, not fat routes.** Route handlers call service functions. Business logic lives in `services/`.
 - **Pydantic validation.** All request bodies go through a Pydantic schema. Never trust raw dicts from the client.
 - **No hardcoded secrets.** All config comes from `backend/config.py` which reads from `.env`.
-- **Error handling.** FastAPI routes raise `HTTPException`. CV engine wraps frame processing in try/except.
+- **Error handling.** FastAPI routes raise `HTTPException`.
 
 ### TypeScript (frontend)
 

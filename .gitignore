@@ -52,7 +52,6 @@ models/*.bin
 models/*.pb
 models/*.h5
 models/*.keras
-cv_engine/models/
 
 # ── Docker / local data volumes ───────────────────────────────────────────────
 data/

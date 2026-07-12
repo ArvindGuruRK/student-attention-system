@@ -33,23 +33,6 @@ services:
     networks:
       - attention-net
 
-  cv-engine:
-    build:
-      context: .
-      dockerfile: cv_engine/Dockerfile
-    container_name: attention_cv_engine
-    env_file:
-      - .env
-    environment:
-      BACKEND_URL: http://backend:8000
-    volumes:
-      - .:/app
-      - ./models:/models
-    networks:
-      - attention-net
-    profiles:
-      - cv
-
 volumes:
   postgres_data:
 

@@ -35,7 +35,7 @@ WebSocket alerting).
 | Cache / Pub-Sub  | Redis 7 (rolling signal buffer + Socket.io adapter)        |
 | Auth             | JWT (python-jose) + bcrypt password hashing                |
 | Config           | python-dotenv (.env file)                                  |
-| Dev Infra        | Docker Compose (postgres, redis, api, cv-engine, frontend) |
+| Dev Infra        | Docker Compose (postgres, redis)                           |
 
 ---
 
@@ -95,14 +95,6 @@ student-attention-system/
 │       ├── env.py
 │       ├── alembic.ini
 │       └── versions/                ← auto-generated migration scripts
-│
-├── cv_engine/                       ← Computer vision process (runs separately)
-│   ├── main.py                      ← entry point: starts monitoring loop
-│   ├── face_detector.py             ← MediaPipe face detection (presence check)
-│   ├── head_pose.py                 ← yaw/pitch/roll via solvePnP
-│   ├── attention_scorer.py          ← combines signals into 0–100 score
-│   ├── signal_emitter.py            ← sends JSON payloads to backend via Socket.io
-│   └── requirements.txt             ← CV-only deps (mediapipe, opencv, socketio-client)
 │
 ├── frontend/                        ← Next.js 15 App Router application
 │   ├── package.json
@@ -239,9 +231,7 @@ student-attention-system/
 
 ## Core Logic — How It Works
 
-### Student flow (two options for MVP)
-
-**Option A — Browser-side MediaPipe (recommended for privacy)**
+### Student flow — Browser-side MediaPipe
 
 1. Student opens `/student/[token]`
 2. Browser requests camera permission
@@ -250,15 +240,6 @@ student-attention-system/
 5. Converts to attention score (0–100) locally
 6. Emits `signal` event via Socket.io to backend
 7. No video ever leaves the browser
-
-**Option B — Python CV engine (for local/lab deployments)**
-
-1. Teacher runs `python cv_engine/main.py --student-id X --name "Ravi"`
-2. Opens webcam, runs MediaPipe locally
-3. Emits signals to backend via Socket.io
-4. Same signal format as Option A
-
-Both options produce identical signal payloads — backend cannot tell the difference.
 
 ### Attention Scoring (attention_service.py)
 
@@ -473,7 +454,6 @@ Docker manages infrastructure only. The backend and frontend run as local proces
 services:
   postgres:   # PostgreSQL 15 — host port 5433 → container 5432
   redis:      # Redis 7 Alpine — host port 6380 → container 6379
-  cv-engine:  # Python CV process — optional, enabled via: docker compose --profile cv up
 ```
 
 Start infrastructure:  `docker compose up postgres redis -d`

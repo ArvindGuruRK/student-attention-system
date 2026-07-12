@@ -102,20 +102,6 @@ This starts the FastAPI backend (port 8000) and Next.js frontend (port 3000) tog
 
 ---
 
-## CV Engine (Optional — Server-side Camera)
-
-By default, attention signals are computed in the student's browser using MediaPipe WASM — no video leaves their device. For lab deployments where you want server-side processing instead:
-
-```bash
-cd cv_engine
-pip install -r requirements.txt
-python main.py --token <student_session_token>
-```
-
-Get the student token from the teacher dashboard under **Classrooms → [Classroom] → Students**.
-
----
-
 ## Environment Variables
 
 Copy `.env.example` to `.env` and fill in your values.
@@ -149,13 +135,6 @@ student-attention-system/
 │   ├── services/             ← business logic (scoring, auth, reports)
 │   ├── socketio_handlers/    ← Socket.io event handlers
 │   └── migrations/           ← Alembic migration scripts
-│
-├── cv_engine/                ← Python CV process (server-side option)
-│   ├── face_detector.py
-│   ├── head_pose.py
-│   ├── attention_scorer.py
-│   ├── signal_emitter.py
-│   └── main.py
 │
 ├── frontend/                 ← Next.js 15 app
 │   ├── app/                  ← App Router pages
