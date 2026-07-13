@@ -9,6 +9,7 @@ interface MediaPipeResult {
   flags: string[];
   isRunning: boolean;
   error: string | null;
+  phoneDetectorError: string | null;
 }
 
 const EMIT_INTERVAL_MS = 3000;
@@ -59,7 +60,7 @@ export function useMediaPipe(
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { isPhoneDetected } = usePhoneDetector(videoRef);
+  const { isPhoneDetected, loadError: phoneDetectorError } = usePhoneDetector(videoRef);
   // Ref so onResults always reads the latest phone state without re-initializing MediaPipe
   const isPhoneDetectedRef = useRef(isPhoneDetected);
 
@@ -212,5 +213,5 @@ export function useMediaPipe(
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { score, flags, isRunning, error };
+  return { score, flags, isRunning, error, phoneDetectorError };
 }

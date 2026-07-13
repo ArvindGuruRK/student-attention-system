@@ -84,7 +84,7 @@ export default function StudentPage() {
   const sessionEnded = socketStatus === "ended";
 
   // Gate MediaPipe: pass true for the stop flag until consent is given or session ends
-  const { score, flags, isRunning, error: cvError } = useMediaPipe(
+  const { score, flags, isRunning, error: cvError, phoneDetectorError } = useMediaPipe(
     videoElementRef as React.RefObject<HTMLVideoElement>,
     sessionId,
     studentId,
@@ -273,6 +273,13 @@ export default function StudentPage() {
             <p className="text-xs text-[#a3a3a3]">Initializing face detection…</p>
           </div>
         </div>
+      )}
+
+      {/* Phone detection unavailable — attention monitoring still works */}
+      {phoneDetectorError && (
+        <p className="text-[11px] text-status-orange-text text-center max-w-xs leading-relaxed">
+          Phone detection unavailable (model failed to load). Attention monitoring is unaffected.
+        </p>
       )}
 
       {/* Privacy note */}
